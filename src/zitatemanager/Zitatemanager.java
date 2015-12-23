@@ -92,7 +92,9 @@ public class Zitatemanager {
 			}
 		}
 		if(tagNum<365 && !schaltjahr) {
-			JOptionPane.showMessageDialog(null, zitateliste.get(tagNum).getZitat()+System.getProperty("line.separator")+"- "+zitateliste.get(tagNum).getAutor(), "Zitat", JOptionPane.PLAIN_MESSAGE);
+			String zitatStr = zitateliste.get(tagNum).getZitat();
+			zitatStr = "<html><body><p style='width: 400px;'>" + zitatStr + "</p></body></html>";
+			JOptionPane.showMessageDialog(null, zitatStr+System.getProperty("line.separator")+"- "+zitateliste.get(tagNum).getAutor(), "Zitat", JOptionPane.PLAIN_MESSAGE);
 			if(heute) {
 				nutzerFrage();
 			}
