@@ -16,6 +16,7 @@ import java.util.Properties;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 /**
@@ -28,11 +29,12 @@ import javax.swing.JOptionPane;
 public class Zitatemanager {
 
 	private ArrayList<Zitat> zitateliste = new ArrayList<Zitat>();
-	private Zeitrechner zr = new Zeitrechner("Datumseingabe","07.08.2004 09:00:00");
+	private Zeitrechner zr = new Zeitrechner("Datumseingabe",Calendar.getInstance().get(Calendar.DAY_OF_MONTH)+"."+(Calendar.getInstance().get(Calendar.MONTH)+1)+"."+Calendar.getInstance().get(Calendar.YEAR)+" 09:00:00");
 	private String dateiname = new String("./files/quotations.txt");
 	private int anzahlTage = 365;
 	private FileReader fr;
 	private Properties prop;
+	private JLabel cacheLabel;
 	
 	public Zitatemanager() {
 		zitateLaden();
@@ -93,8 +95,16 @@ public class Zitatemanager {
 		}
 		if(tagNum<365 && !schaltjahr) {
 			String zitatStr = zitateliste.get(tagNum).getZitat();
-			zitatStr = "<html><body><p style='width: 400px;'>" + zitatStr + "</p></body></html>";
-			JOptionPane.showMessageDialog(null, zitatStr+System.getProperty("line.separator")+"- "+zitateliste.get(tagNum).getAutor(), "Zitat", JOptionPane.PLAIN_MESSAGE);
+			cacheLabel = new JLabel(zitatStr);
+	        if(cacheLabel.getPreferredSize().width > 400) {
+	        	zitatStr = "<html><body><p style='width: 400px;'>" + zitatStr + "</p></body></html>";
+	        }
+	        String autorStr = "- "+zitateliste.get(tagNum).getAutor();
+	        cacheLabel = new JLabel(autorStr);
+	        if(cacheLabel.getPreferredSize().width > 400) {
+	        	autorStr = "<html><body><p style='width: 400px;'>" + autorStr + "</p></body></html>";
+	        }
+			JOptionPane.showMessageDialog(null, zitatStr+System.getProperty("line.separator")+autorStr, "Zitat", JOptionPane.PLAIN_MESSAGE);
 			if(heute) {
 				nutzerFrage();
 			}
