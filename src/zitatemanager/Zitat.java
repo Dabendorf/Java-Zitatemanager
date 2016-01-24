@@ -9,8 +9,11 @@ package zitatemanager;
  */
 public class Zitat {
 	
+	/**Nummer des Datums von 0 bis 364*/
 	private int datumInt;
+	/**Autor des Zitats*/
 	private String autor;
+	/**Text des Zitats*/
 	private String zitat;
 	
 	public Zitat(int datumInt, String autor, String zitat) {

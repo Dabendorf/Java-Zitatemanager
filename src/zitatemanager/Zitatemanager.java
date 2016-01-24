@@ -5,7 +5,8 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.FileReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +21,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 /**
- * Dies ist die Hauptklasse des Zitatemanagers. Sie liest alle falschen Zitate aus der Textdatei ein, speichert sie ab und fragt den Nutzer entsprechend, welches Zitat er aufrufen moechte.
+ * Dies ist die Hauptklasse des Zitatemanagers. Sie liest alle falschen Zitate aus der xml-Datei ein, speichert sie ab und fragt den Nutzer entsprechend, welches Zitat er aufrufen moechte.
  * 
  * @author Lukas Schramm
  * @version 1.0
@@ -28,15 +29,23 @@ import javax.swing.JOptionPane;
  */
 public class Zitatemanager {
 
+	/**ArrayList aller Zitate*/
 	private ArrayList<Zitat> zitateliste = new ArrayList<Zitat>();
+	/**Element des Zeitrechners*/
 	private Zeitrechner zr = new Zeitrechner("Datumseingabe",Calendar.getInstance().get(Calendar.DAY_OF_MONTH)+"."+(Calendar.getInstance().get(Calendar.MONTH)+1)+"."+Calendar.getInstance().get(Calendar.YEAR)+" 09:00:00");
-	private String dateiname = new String("./files/quotations.txt");
+	/**Pfad zur Zitatedatei*/
+	private String dateiname = "files/quotations.xml";
+	/**Anzahl zu ladener Zitate*/
 	private int anzahlTage = 365;
-	private FileReader fr;
-	private Properties prop;
+	/**Die geladene Speicherdatei*/
+	private File file;
+	/**Zu speichernde Propertieselemente*/
+	private Properties prop = new Properties();;
+	/**Internes Label zur Berechnung der Textbreite*/
 	private JLabel cacheLabel;
 	
 	public Zitatemanager() {
+		file = new File(dateiname);
 		zitateLaden();
 		nutzerFrage();
 	}
@@ -46,14 +55,24 @@ public class Zitatemanager {
 	 */
 	private void zitateLaden() {
 		try {
-			ladeDatei();
+			FileInputStream fileInput = new FileInputStream(file);
+			prop.loadFromXML(fileInput);
+			fileInput.close();
 			for(int i=0;i<anzahlTage;i++) {
 				List<String> zitatStrArr = aufrufen(String.valueOf(i));
 				zitatStrArr.set(1,zitatStrArr.get(1).replaceAll("\t",""));
 				zitateliste.add(new Zitat(i,zitatStrArr.get(0),zitatStrArr.get(1)));
 			}
-			fr.close();
-		} catch (IOException e) { }
+		} catch(IOException e) {
+			try {
+				file.createNewFile();
+			} catch (IOException e1) {
+				fileDamage(dateiname);
+			}
+		} catch(NullPointerException e) {
+			JOptionPane.showMessageDialog(null, "Es tut uns leid Genosse, aber in der Zitatliste fehlen einige Zitate."+System.getProperty("line.separator")+"Bitte stelle sicher, dass die Datei vollständig ist.", "Datei defekt", JOptionPane.ERROR_MESSAGE);
+			System.exit(0);
+		}
 	}
 	
 	/**
@@ -94,18 +113,23 @@ public class Zitatemanager {
 			}
 		}
 		if(tagNum<365 && !schaltjahr) {
-			String zitatStr = zitateliste.get(tagNum).getZitat();
-			cacheLabel = new JLabel(zitatStr);
-	        if(cacheLabel.getPreferredSize().width > 400) {
-	        	zitatStr = "<html><body><p style='width: 400px;'>" + zitatStr + "</p></body></html>";
-	        }
-	        String autorStr = "- "+zitateliste.get(tagNum).getAutor();
-	        cacheLabel = new JLabel(autorStr);
-	        if(cacheLabel.getPreferredSize().width > 400) {
-	        	autorStr = "<html><body><p style='width: 400px;'>" + autorStr + "</p></body></html>";
-	        }
-			JOptionPane.showMessageDialog(null, zitatStr+System.getProperty("line.separator")+autorStr, "Zitat", JOptionPane.PLAIN_MESSAGE);
-			if(heute) {
+			try {
+				String zitatStr = zitateliste.get(tagNum).getZitat();
+				cacheLabel = new JLabel(zitatStr);
+		        if(cacheLabel.getPreferredSize().width > 400) {
+		        	zitatStr = "<html><body><p style='width: 400px;'>" + zitatStr + "</p></body></html>";
+		        }
+		        String autorStr = "- "+zitateliste.get(tagNum).getAutor();
+		        cacheLabel = new JLabel(autorStr);
+		        if(cacheLabel.getPreferredSize().width > 400) {
+		        	autorStr = "<html><body><p style='width: 400px;'>" + autorStr + "</p></body></html>";
+		        }
+				JOptionPane.showMessageDialog(null, zitatStr+System.getProperty("line.separator")+autorStr, "Zitat", JOptionPane.PLAIN_MESSAGE);
+				if(heute) {
+					nutzerFrage();
+				}
+			} catch(IndexOutOfBoundsException e1) {
+				JOptionPane.showMessageDialog(null, "Es tut uns leid Genosse, aber in der Zitatliste fehlt das heutige Datum."+System.getProperty("line.separator")+"Bitte stelle sicher, dass die Datei vollständig ist.", "Datei defekt", JOptionPane.ERROR_MESSAGE);
 				nutzerFrage();
 			}
 		}
@@ -133,7 +157,6 @@ public class Zitatemanager {
 			}
 		});
 		
-		
 		cp.add(zr,BorderLayout.NORTH);
 		cp.add(zitatAnzeige,BorderLayout.CENTER);
 		
@@ -141,15 +164,6 @@ public class Zitatemanager {
 		frame1.setLocationRelativeTo(null);
 		frame1.setVisible(true);
 		zr.umrechnen();
-	}
-	
-	/**
-	 * Diese Methode laedt die Datei, aus welcher zu lesen ist.
-	 */
-	private void ladeDatei() throws IOException {
-		fr = new FileReader(dateiname);
-		prop = new Properties();
-		prop.load(fr);
 	}
 	
 	/**
@@ -167,6 +181,15 @@ public class Zitatemanager {
 			np.printStackTrace();
 			return null;
 		}
+	}
+	
+	/**
+	 * Diese Methode gibt eine Meldung ueber eine fehlerhaft angelegte oder nicht vorhandene Speicherdatei aus.
+	 * @param filename Pfad der fehlerhaften Datei.
+	 */
+	public void fileDamage(String filename) {
+		String linebreak = System.getProperty("line.separator");
+		JOptionPane.showMessageDialog(null, "Die Speicherdatei /"+filename+" ist nicht vorhanden oder beschädigt."+linebreak+"Die Spielfunktion ist nur eingeschränkt möglich."+linebreak+"Stelle die Speicherdatei wieder her und versuche es erneut.", "Fehlerhafte Datei", JOptionPane.ERROR_MESSAGE);
 	}
 	
 	public static void main(String[] args) {
